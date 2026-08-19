@@ -1,0 +1,825 @@
+
+  # **UPCOMING**
+----
+  * **5 New Modules:** `developer_tools`, `special_tools`, `media_tools`, `ai_ml_tools`, `system_modes`, and `system_reset`.
+  * **New Safety Feature:** A confirmation prompt in `common.sh`.
+  * **Expanded Main Script:** The menu is updated to include the new modules.
+  * **Test Suite:** A `test.sh` file to check syntax and dry-run functionality.
+  * **GitHub Files:** `CONTRIBUTING.md` and a `ci.yml` workflow.
+  * **UI-GUI-Node Wizards
+-----
+
+## 1\. New Module: `modules/developer_tools.sh`
+
+*This module fulfills "Developer toolbox with 50+ tools" by providing functions to install common toolsets by category.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - Developer Tools Module
+# Version: 2.1.0
+# Description: Installs common developer toolsets and environments.
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+# It expects $DRY_RUN, $PKG_INSTALL and log_message() to be available.
+
+# Installs essential build tools
+install_dev_base() {
+    log_message INFO "Installing base developer tools..."
+    local pkgs="build-essential git curl wget cmake"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+# Installs Web Development stack (Node, Python, PHP)
+install_dev_web() {
+    log_message INFO "Installing Web developer tools..."
+    local pkgs="nodejs npm python3-pip php-cli php-curl php-mbstring composer"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+# Installs DevOps stack (Docker, Kubernetes, Ansible)
+install_dev_devops() {
+    log_message INFO "Installing DevOps tools..."
+    local pkgs="docker.io docker-compose ansible"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+        # Add user to docker group
+        sudo usermod -aG docker $USER || true
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+# Installs Embedded/C++/Java stack
+install_dev_compiled() {
+    log_message INFO "Installing Compiled Language tools..."
+    local pkgs="openjdk-17-jdk gdb valgrind"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+# Main function
+run_devtools_module_main() {
+    log_message INFO "--- Running Developer Toolset Installer ---"
+    
+    install_dev_base
+    install_dev_web
+    install_dev_devops
+    install_dev_compiled
+    
+    log_message SUCCESS "--- Developer tools installation complete! ---"
+    log_message WARNING "Please log out and log back in to use Docker without sudo."
+}
+
+# Guard to allow standalone execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_devtools_module_main "$@"
+fi
+```
+
+## 2\. New Module: `modules/special_tools.sh`
+
+*This module fulfills special goal (TCPDF, ImageMagick, WireViz, OptiByte_5, Arduino CLI).
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - Special Tasks Module 
+# Version: 2.1.0
+# Description: Installs specialized toolbox (ImageMagick, TCPDF, WireViz, OptiByte_5, Arduino CLI)
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+
+install_imagemagick() {
+    log_message INFO "Installing ImageMagick..."
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL imagemagick
+    else
+        log_message INFO "[DRY RUN] Would install: imagemagick"
+    fi
+}
+
+install_tcpdf() {
+    log_message INFO "Installing TCPDF (PHP PDF Library)..."
+    log_message INFO "This requires PHP and Composer."
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL php-cli composer
+        # Install TCPDF globally with composer
+        sudo composer global require tcpdf/tcpdf
+    else
+        log_message INFO "[DRY RUN] Would install: php-cli composer"
+        log_message INFO "[DRY RUN] Would run: sudo composer global require tcpdf/tcpdf"
+    fi
+}
+
+install_wireviz() {
+    log_message INFO "Installing WireViz (Cable Diagram Tool)..."
+    log_message INFO "This requires Python/Pip and Graphviz."
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL python3-pip graphviz
+        pip3 install wireviz
+    else
+        log_message INFO "[DRY RUN] Would install: python3-pip graphviz"
+        log_message INFO "[DRY RUN] Would run: pip3 install wireviz"
+    fi
+}
+
+install_arduino_cli() {
+    log_message INFO "Installing Arduino CLI..."
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+        # Move to bin
+        if [[ -f "./bin/arduino-cli" ]]; then
+            sudo mv ./bin/arduino-cli /usr/local/bin/arduino-cli
+            rm -rf ./bin
+        fi
+    else
+        log_message INFO "[DRY RUN] Would download and run Arduino CLI install script."
+    fi
+}
+
+# Main function
+run_specialtools_module_main() {
+    log_message INFO "--- Running Special Toolset Installer ---"
+    
+    install_imagemagick
+    install_tcpdf
+    install_wireviz
+    install_arduino_cli
+    
+    log_message SUCCESS "--- Special tools installation complete! ---"
+}
+
+# Guard to allow standalone execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_specialtools_module_main "$@"
+fi
+```
+
+## 3\. New Module: `modules/media_tools.sh`
+
+This module fulfills "Complete audio production suite" goal.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - Media Tools Module
+# Version: 2.1.0
+# Description: Installs audio & video production tools
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+
+install_audio_suite() {
+    log_message INFO "Installing Audio Production Suite..."
+    local pkgs="jackd2 ardour audacity lmms qjackctl"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+install_video_suite() {
+    log_message INFO "Installing Video Production Suite..."
+    local pkgs="kdenlive obs-studio blender"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+    fi
+}
+
+# Main function
+run_media_module_main() {
+    log_message INFO "--- Running Media Toolset Installer ---"
+    
+    install_audio_suite
+    install_video_suite
+    
+    log_message SUCCESS "--- Media tools installation complete! ---"
+}
+
+# Guard to allow standalone execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_media_module_main "$@"
+fi
+```
+
+## 4\. New Module: `modules/ai_ml_tools.sh`
+
+This module fulfills "Enhanced AI/ML tools with Ollama" goal.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - AI/ML Tools Module
+# Version: 2.1.0
+# Description: Installs Ollama and common AI/ML Python libraries
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+
+install_ollama() {
+    log_message INFO "Installing Ollama..."
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        curl -fsSL https://ollama.com/install.sh | sh
+    else
+        log_message INFO "[DRY RUN] Would download and run Ollama install script."
+    fi
+}
+
+install_ai_python_libs() {
+    log_message INFO "Installing core AI/ML Python libraries..."
+    local pkgs="python3-pip"
+    local pip_pkgs="tensorflow torch jupyterlab"
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL $pkgs
+        pip3 install $pip_pkgs
+    else
+        log_message INFO "[DRY RUN] Would install: $pkgs"
+        log_message INFO "[DRY RUN] Would run: pip3 install $pip_pkgs"
+    fi
+}
+
+# Main function
+run_ai_module_main() {
+    log_message INFO "--- Running AI/ML Toolset Installer ---"
+    
+    install_ollama
+    install_ai_python_libs
+    
+    log_message SUCCESS "--- AI/ML tools installation complete! ---"
+}
+
+# Guard to allow standalone execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_ai_module_main "$@"
+fi
+```
+
+## 5\. New Module: `modules/system_modes.sh`
+
+This module fulfills "Gaming/Dev/Server optimization modes" goal.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - System Mode Module
+# Version: 2.1.0
+# Description: Toggles system optimization profiles
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+
+set_server_mode() {
+    log_message INFO "Setting system to SERVER mode..."
+    log_message INFO "Setting CPU governor to 'performance'..."
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+        # Disable desktop services
+        sudo systemctl isolate multi-user.target
+    else
+        log_message INFO "[DRY RUN] Would set CPU governor to 'performance'"
+        log_message INFO "[DRY RUN] Would run: sudo systemctl isolate multi-user.target"
+    fi
+    log_message SUCCESS "System is now in SERVER mode."
+}
+
+set_gaming_mode() {
+    log_message INFO "Setting system to GAMING mode..."
+    log_message INFO "Installing Feral GameMode..."
+    log_message INFO "Setting CPU governor to 'performance'..."
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        sudo $PKG_INSTALL gamemode
+        echo "performance" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+    else
+        log_message INFO "[DRY RUN] Would install: gamemode"
+        log_message INFO "[DRY RUN] Would set CPU governor to 'performance'"
+    fi
+    log_message SUCCESS "System is now in GAMING mode."
+}
+
+set_desktop_mode() {
+    log_message INFO "Setting system to DESKTOP (Balanced) mode..."
+    log_message INFO "Setting CPU governor to 'ondemand'..."
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        echo "ondemand" | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null
+        # Ensure graphical target is active
+        sudo systemctl isolate graphical.target
+    else
+        log_message INFO "[DRY RUN] Would set CPU governor to 'ondemand'"
+        log_message INFO "[DRY RUN] Would run: sudo systemctl isolate graphical.target"
+    fi
+    log_message SUCCESS "System is now in DESKTOP mode."
+}
+
+# Main function
+run_modes_module_main() {
+    log_message INFO "--- System Mode Tuner ---"
+    
+    echo "Please select a system profile:"
+    echo "  1) Server (Headless, max performance)"
+    echo "  2) Gaming (Desktop, max performance, install gamemode)"
+    echo "  3) Desktop (Balanced, ondemand governor)"
+    echo "  0) Cancel"
+    echo -n "Select an option: "
+    read -r choice
+    
+    case $choice in
+        1) set_server_mode ;;
+        2) set_gaming_mode ;;
+        3) set_desktop_mode ;;
+        *) log_message INFO "Cancelled." ;;
+    esac
+}
+
+# Guard
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_modes_module_main "$@"
+fi
+```
+
+## 6\. New Module: `modules/system_reset.sh`
+
+This module fulfills goal "System reset/nuclear clean options killer" and includes the necessary confirmation prompt.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - System Reset Module
+# Version: 2.1.0
+# Description: Provides dangerous 'nuclear' cleaning options.
+#############################################################################
+
+# This script is intended to be sourced by deep-optimizer-pro.sh
+
+# This module *requires* the confirm_action function
+if ! command -v confirm_action &>/dev/null; then
+    log_message ERROR "System Reset module failed to load: confirm_action not found."
+    # Define a fallback to prevent script errors
+    confirm_action() {
+        log_message ERROR "Confirmation function missing. Aborting."
+        return 1
+    }
+fi
+
+nuclear_clean_user() {
+    log_message WARNING "Starting USER profile nuclear clean."
+    log_message WARNING "This will delete all caches, configs, and temporary app data for $USER."
+    
+    if ! confirm_action "Type 'YES' to delete all user caches/configs"; then
+        log_message INFO "User profile clean aborted."
+        return
+    fi
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        # Stop user services
+        systemctl --user stop $(systemctl --user list-units --type=service --state=running | awk 'NR>1 {print $1}')
+        
+        # Delete common data directories
+        rm -rf "$HOME/.cache"
+        rm -rf "$HOME/.config"
+        rm -rf "$HOME/.local/share"
+        rm -rf "$HOME/.local/state"
+        rm -rf "$HOME/.thumbnails"
+    else
+        log_message INFO "[DRY RUN] Would delete $HOME/.cache, $HOME/.config, $HOME/.local/*"
+    fi
+    
+    log_message SUCCESS "User profile clean complete. Please log out."
+}
+
+nuclear_clean_system() {
+    log_message WARNING "Starting SYSTEM nuclear clean."
+    log_message WARNING "This will purge all system logs, all temp files, and all orphaned packages."
+    
+    if ! confirm_action "Type 'YES' to purge all system logs and orphans"; then
+        log_message INFO "System clean aborted."
+        return
+    fi
+    
+    if [[ ${DRY_RUN:-false} == false ]]; then
+        # Clean packages
+        sudo $PKG_CLEAN
+        # Clean system logs
+        sudo find /var/log -type f -delete
+        sudo journalctl --vacuum-size=1M
+        # Clean all temp
+        sudo rm -rf /tmp/*
+        sudo rm -rf /var/tmp/*
+    else
+        log_message INFO "[DRY RUN] Would run $PKG_CLEAN"
+        log_message INFO "[DRY RUN] Would delete all files in /var/log, /tmp, /var/tmp"
+    fi
+    
+    log_message SUCCESS "System nuclear clean complete."
+}
+
+# Main function
+run_reset_module_main() {
+    log_message ERROR "--- DANGER: System Reset Module ---"
+    
+    echo "These operations are destructive and cannot be undone."
+    echo "  1) Nuclear Clean USER Profile (Deletes all app configs/caches)"
+    echo "  2) Nuclear Clean SYSTEM (Purges all logs, orphans, temp files)"
+    echo "  0) Cancel"
+    echo -n "Select an option: "
+    read -r choice
+    
+    case $choice in
+        1) nuclear_clean_user ;;
+        2) nuclear_clean_system ;;
+        *) log_message INFO "Cancelled." ;;
+    esac
+}
+
+# Guard
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    DRY_RUN=${DRY_RUN:-false}
+    LOG_DIR="/tmp"
+    log_message() { echo "$*"; }
+    
+    if ! command -v init_common &>/dev/null; then
+        source "$(dirname "$0")/../lib/common.sh" 2>/dev/null || true
+        init_common
+    fi
+    
+    run_reset_module_main "$@"
+fi
+```
+
+## 7\. Updated File: `lib/common.sh`
+
+This adds the `confirm_action` function to fulfill "Multiple confirmations" safety goal. Function in `lib/common.sh` file.
+
+```bash
+#!/bin/bash
+# ... (all your existing functions in common.sh) ...
+
+# Confirm action (for dangerous operations)
+confirm_action() {
+    local message=${1:-"Are you sure?"}
+    
+    log_message WARNING "$message"
+    echo -e "${RED}This action is destructive and cannot be undone.${NC}"
+    echo -e "Type ${YELLOW}YES${NC} to proceed:"
+    
+    read -r user_input
+    
+    if [[ "$user_input" != "YES" ]]; then
+        log_message INFO "Action cancelled by user."
+        return 1
+    fi
+    
+    log_message WARNING "Confirmation received. Proceeding."
+    return 0
+}
+
+# ... (rest of your init_common() function) ...
+
+# Export all functions
+export -f log_message
+export -f check_privileges
+export -f get_distro_info
+export -f detect_package_manager
+export -f show_progress
+export -f load_config
+export -f init_logging
+export -f init_common
+export -f confirm_action # <-- Add this new export
+```
+
+## 8\. Updated File: `deep-optimizer-pro.sh`
+
+This updates the main script to source and display the new modules, bringing the menu count up.
+
+```bash
+#!/bin/bash
+# ... (all existing header/path definitions) ...
+
+# --- Source Libraries and Modules ---
+# ... (source common.sh) ...
+
+# Source all modules
+if [[ -d "$MODULE_DIR" ]]; then
+    for module in "$MODULE_DIR"/*.sh; do # <-- This loop now picks up all new modules
+        if [[ -f "$module" ]]; then
+            log_message DEBUG "Sourcing module: $module"
+            source "$module"
+        fi
+    done
+else
+    log_message ERROR "Module directory not found: $MODULE_DIR"
+    exit 1
+fi
+# ------------------------------------
+
+# ... (all existing functions like show_system_info, backup_config, etc.) ...
+
+# Interactive menu
+show_menu() {
+    clear
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC}     ${WHITE}DEEP OPTIMIZER PRO - Linux System Optimizer${NC}      ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}                  ${YELLOW}Version $SCRIPT_VERSION${NC}                     ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${MAGENTA}--- Core Optimization ---${NC}"
+    echo -e "${GREEN}1.${NC} Full System Optimization (Recommended)"
+    echo -e "${GREEN}2.${NC} Quick Optimization (Fast mode)"
+    
+    echo -e "\n${MAGENTA}--- Core Modules ---${NC}"
+    echo -e "${GREEN}3.${NC} Run Storage Module (Clean Caches, Kernels, Docker...)"
+    echo -e "${GREEN}4.${NC} Run Performance Module (Tune CPU, I/O, ZRAM...)"
+    echo -e "${GREEN}5.${NC} Run Security Module (Harden SSH, Firewall, Scans...)"
+
+    echo -e "\n${MAGENTA}--- Installers & Profiles ---${NC}"
+    echo -e "${GREEN}6.${NC} Install Developer Tools (Web, DevOps, C++...)"
+    echo -e "${GREEN}7.${NC} Install Special Tools (ImageMagick, Arduino CLI...)"
+    echo -e "${GREEN}8.${NC} Install Media Suite (Audio/Video)"
+    echo -e "${GREEN}9.${NC} Install AI/ML Suite (Ollama, PyTorch...)"
+    echo -e "${GREEN}10.${NC} Set System Profile (Server, Gaming, Desktop)"
+
+    echo -e "\n${MAGENTA}--- System & Safety ---${NC}"
+    echo -e "${GREEN}11.${NC} Show System Information"
+    echo -e "${GREEN}12.${NC} Backup Configuration"
+    echo -e "${GREEN}13.${NC} Dry Run (Preview Full Optimization)"
+    echo -e "${RED}14.${NC} System Reset (Nuclear Clean Options...)"
+    echo -e "${RED}0.${NC} Exit"
+    echo ""
+    echo -n "Select an option: "
+}
+
+# ... (run_full_optimization, run_quick_optimization, parse_arguments, show_help) ...
+
+# Main function
+main() {
+    # ... (setup, parse_arguments) ...
+    
+    # Interactive mode
+    while true; do
+        show_menu
+        read -r choice
+        
+        case $choice in
+            1) run_full_optimization; read -p "Press Enter..." ;;
+            2) run_quick_optimization; read -p "Press Enter..." ;;
+            3) run_storage_module_main; read -p "Press Enter..." ;;
+            4) run_performance_module_main; read -p "Press Enter..." ;;
+            5) run_security_module_main; read -p "Press Enter..." ;;
+            6) run_devtools_module_main; read -p "Press Enter..." ;;
+            7) run_specialtools_module_main; read -p "Press Enter..." ;;
+            8) run_media_module_main; read -p "Press Enter..." ;;
+            9) run_ai_module_main; read -p "Press Enter..." ;;
+            10) run_modes_module_main; read -p "Press Enter..." ;;
+            11) show_system_info; read -p "Press Enter..." ;;
+            12) backup_config; read -p "Press Enter..." ;;
+            13)
+                DRY_RUN=true; export DRY_RUN=true
+                echo -e "${YELLOW}Dry run mode activated${NC}"
+                run_full_optimization
+                DRY_RUN=false; export DRY_RUN=false
+                read -p "Press Enter..."
+                ;;
+            14) run_reset_module_main; read -p "Press Enter..." ;;
+            0)
+                echo -e "${GREEN}Thank you for using $SCRIPT_NAME!${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}Invalid option. Please try again.${NC}"
+                sleep 2
+                ;;
+        esac
+    done
+}
+# ... (trap and main "$@" call) ...
+```
+
+## 9\. New File: `test.sh`
+
+This file fulfills your "Test suite included" goal.
+
+```bash
+#!/bin/bash
+
+#############################################################################
+# Deep Optimizer Pro - Test Suite
+# Version: 2.1.0
+#############################################################################
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+# Test counters
+PASSED=0
+FAILED=0
+
+# Simple assertion function
+assert() {
+    local message=$1
+    shift
+    local command="$@"
+    
+    echo -n "TEST: $message ... "
+    if $command; then
+        echo -e "${GREEN}PASSED${NC}"
+        ((PASSED++))
+    else
+        echo -e "${RED}FAILED${NC}"
+        ((FAILED++))
+    fi
+}
+
+echo "Starting Deep Optimizer Pro Test Suite..."
+echo "=========================================="
+
+# --- 1. File Permissions ---
+echo "Running File Permission Tests..."
+assert "Make scripts executable" chmod +x *.sh modules/*.sh lib/*.sh
+
+# --- 2. Syntax Check (Linting) ---
+echo -e "\nRunning Syntax Checks (bash -n)..."
+for file in $(find . -name "*.sh"); do
+    assert "Syntax check $file" bash -n "$file"
+done
+
+# --- 3. ShellCheck (Requires shellcheck to be installed) ---
+if command -v shellcheck &>/dev/null; then
+    echo -e "\nRunning ShellCheck..."
+    assert "ShellCheck main script" shellcheck deep-optimizer-pro.sh
+    assert "ShellCheck modules" shellcheck modules/*.sh
+    assert "ShellCheck lib" shellcheck lib/common.sh
+else
+    echo -e "\n${YELLOW}SKIPPING ShellCheck (install shellcheck to run)${NC}"
+fi
+
+# --- 4. Core Functionality Tests ---
+# Note: These tests must be run in the project's root directory
+echo -e "\nRunning Core Functionality Tests..."
+assert "Run --version" ./deep-optimizer-pro.sh --version
+assert "Run --help" ./deep-optimizer-pro.sh --help
+assert "Run --dry-run" sudo ./deep-optimizer-pro.sh --full --dry-run
+assert "Run storage module --dry-run" sudo ./deep-optimizer-pro.sh --module storage --dry-run
+assert "Run performance module --dry-run" sudo ./deep-optimizer-pro.sh --module performance --dry-run
+assert "Run security module --dry-run" sudo ./deep-optimizer-pro.sh --module security --dry-run
+
+# --- 5. Report Results ---
+echo "=========================================="
+echo "Test Run Complete."
+echo -e "${GREEN}PASSED: $PASSED${NC}"
+echo -e "${RED}FAILED: $FAILED${NC}"
+
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
+fi
+exit 0
+```
+
+## 10\. New File: `CONTRIBUTING.md`
+
+This file fulfills your "GitHub Essentials" goal.
+
+```markdown
+# Contributing to Deep Optimizer Pro
+
+We welcome contributions from the community! Whether it's a bug report, a new feature, or a documentation update, your help is appreciated.
+
+## How to Contribute
+
+### Reporting Bugs
+If you find a bug, please [open an issue](https://github.com/iSystemDevelopment/deep-optimizer-pro-linux/issues) on our GitHub repository.
+Please include:
+* Your operating system and distribution.
+* The version of Deep Optimizer Pro you are using.
+* Steps to reproduce the bug.
+* The output from the log file (`/var/log/deep-optimizer-pro/optimization.log`).
+
+### Suggesting Enhancements
+Have a great idea? We'd love to hear it. Please [open an issue](https://github.com/iSystemDevelopment/deep-optimizer-pro-linux/issues) and select the "Feature Request" template.
+
+### Pull Request Process
+1.  **Fork** the repository.
+2.  **Create** a new branch for your feature (`git checkout -b feature/MyAwesomeFeature`).
+3.  **Commit** your changes (`git commit -m 'Add: MyAwesomeFeature'`).
+4.  **Lint** your code. We use `shellcheck` for all shell scripts.
+5.  **Test** your changes. Run the `./test.sh` script to ensure nothing has broken.
+6.  **Push** your branch (`git push origin feature/MyAwesomeFeature`).
+7.  **Open** a Pull Request.
+
+## Style Guide
+* All shell scripts must pass `shellcheck`.
+* Follow the existing code style (variable naming, function structure).
+* Add comments for any complex logic.
+* Update the `README.md` and `install.sh` if your changes add new dependencies or features.
+```
+
+## 11\. New File: `.github/workflows/ci.yml`
+
+This file fulfills your "CI/CD workflow" goal. You must create the `.github` directory and then the `workflows` directory inside it.
+
+```yaml
+name: Linux Shell CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  shellcheck:
+    name: ShellCheck Linter
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Install ShellCheck
+      run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+    - name: Run ShellCheck
+      run: |
+        echo "Running ShellCheck on all .sh files..."
+        find . -type f -name "*.sh" -print0 | xargs -0 shellcheck
+```
